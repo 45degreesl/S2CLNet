@@ -39,7 +39,7 @@ S2CLNet is evaluated on three publicly released referring remote sensing image s
 Place the downloaded data under the shared dataset directory:
 
 ```text
-refer/data/
+datasets/
 ├── RefSegRS/
 ├── rrsisd/
 └── RISBench/
@@ -67,8 +67,8 @@ The Swin implementation also uses BERT-base-uncased. Tokenizer metadata is inclu
 
 ```bash
 cd clip
-python train.py --dataset refsegrs --refer_data_root ../refer/data/RefSegRS --pretrained_clip_weights ./pretrained_weights/RN101.pt
-python test.py --dataset refsegrs --refer_data_root ../refer/data/RefSegRS --pretrained_clip_weights ./pretrained_weights/RN101.pt --resume ./checkpoints/S2CLNet/model_best_S2CLNet.pth
+python train.py --dataset refsegrs --refer_data_root ../datasets/RefSegRS --pretrained_clip_weights ./pretrained_weights/RN101.pt
+python test.py --dataset refsegrs --refer_data_root ../datasets/RefSegRS --pretrained_clip_weights ./pretrained_weights/RN101.pt --resume ./checkpoints/S2CLNet/model_best_S2CLNet.pth
 ```
 
 The CLIP model, tokenizer, data adapters, loss, and training utilities are contained in `clip/`.
@@ -77,8 +77,8 @@ The CLIP model, tokenizer, data adapters, loss, and training utilities are conta
 
 ```bash
 cd swin
-python train.py --dataset refsegrs --refer_data_root ../refer/data/RefSegRS --ck_bert ./bert-base-uncased --bert_tokenizer ./bert-base-uncased --pretrained_swin_weights ./pretrained_weights/swin_base_patch4_window12_384_22k.pth
-python test.py --dataset refsegrs --refer_data_root ../refer/data/RefSegRS --ck_bert ./bert-base-uncased --bert_tokenizer ./bert-base-uncased --pretrained_swin_weights ./pretrained_weights/swin_base_patch4_window12_384_22k.pth --resume ./checkpoints/S2CLNet-SwinBERT/model_best_S2CLNet-SwinBERT.pth
+python train.py --dataset refsegrs --refer_data_root ../datasets/RefSegRS --ck_bert ./bert-base-uncased --bert_tokenizer ./bert-base-uncased --pretrained_swin_weights ./pretrained_weights/swin_base_patch4_window12_384_22k.pth
+python test.py --dataset refsegrs --refer_data_root ../datasets/RefSegRS --ck_bert ./bert-base-uncased --bert_tokenizer ./bert-base-uncased --pretrained_swin_weights ./pretrained_weights/swin_base_patch4_window12_384_22k.pth --resume ./checkpoints/S2CLNet-SwinBERT/model_best_S2CLNet-SwinBERT.pth
 ```
 
 The Swin visual backbone, BERT source implementation, BERT tokenizer metadata, model components, and data adapters are contained in `swin/`.
@@ -86,3 +86,4 @@ The Swin visual backbone, BERT source implementation, BERT tokenizer metadata, m
 ## Citation
 
 Please cite the S2CLNet paper when using this code. The implementation builds on the open-source LAVT, Swin Transformer, BERT, and OpenAI CLIP projects.
+

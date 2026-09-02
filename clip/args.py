@@ -20,7 +20,7 @@ def get_parser():
     parser.add_argument('--pretrained_clip_weights', default='./pretrained_weights/RN101.pt',
                         help='path to the OpenAI CLIP RN101 checkpoint')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
-    parser.add_argument('--refer_data_root', default='./refer/data/', help='dataset root directory')
+    parser.add_argument('--refer_data_root', default='../datasets/', help='dataset root directory')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--split', default='test', help='only used when testing')
     parser.add_argument('--splitBy', default='unc', help='dataset split convention used by the REFER adapter')

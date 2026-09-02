@@ -5,13 +5,13 @@ __pycache__/
 .pytest_cache/
 
 # Datasets, checkpoints, logs, and generated visualizations
-refer/data/*
-!refer/data/rrsisd/
-!refer/data/rrsisd/.gitkeep
-!refer/data/RefSegRS/
-!refer/data/RefSegRS/.gitkeep
-!refer/data/RISBench/
-!refer/data/RISBench/.gitkeep
+datasets/*
+!datasets/rrsisd/
+!datasets/rrsisd/.gitkeep
+!datasets/RefSegRS/
+!datasets/RefSegRS/.gitkeep
+!datasets/RISBench/
+!datasets/RISBench/.gitkeep
 checkpoints/
 best_iou_files/
 infer_results/
