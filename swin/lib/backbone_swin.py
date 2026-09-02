@@ -21,7 +21,6 @@ class AdaptiveModalityFusion(nn.Module):
         )
         
         self.lang_to_vis_proj = nn.Conv1d(value_channels, value_channels, 1, 1)
-        
         self.modality_assessment = nn.Sequential(
             nn.Linear(dim + l_in_channels, 256),
             nn.ReLU(),
