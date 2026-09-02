@@ -11,12 +11,9 @@ import math
 class AdaptiveModalityFusion(nn.Module):
     def __init__(self, dim, v_in_channels, l_in_channels, key_channels, value_channels, num_heads=1, dropout=0.0):
         super(AdaptiveModalityFusion, self).__init__()
-        # 视觉到语言的注意力
         self.image_lang_att = SpatialImageLanguageAttention(v_in_channels, l_in_channels, key_channels, value_channels, num_heads=num_heads)
-        # 语言到视觉的注意力
         self.lang_image_att = SpatialLanguageImageAttention(l_in_channels, v_in_channels, key_channels, value_channels, num_heads=num_heads)
         
-        # 特征投影层
         self.vis_project = nn.Sequential(
             nn.Conv1d(dim, dim, 1, 1),
             nn.GELU(),
@@ -24,8 +21,6 @@ class AdaptiveModalityFusion(nn.Module):
         )
         
         self.lang_to_vis_proj = nn.Conv1d(value_channels, value_channels, 1, 1)
-        
-        # 模态重要性评估网络
         self.modality_assessment = nn.Sequential(
             nn.Linear(dim + l_in_channels, 256),  # 视觉特征和语言特征的维度
             nn.ReLU(),
@@ -33,7 +28,6 @@ class AdaptiveModalityFusion(nn.Module):
             nn.Softmax(dim=-1)  # 归一化确保两个权重和为1
         )
         
-        # 融合层
         self.fusion_layer = nn.Sequential(
             nn.Conv1d(value_channels * 2, value_channels, 1, 1),
             nn.GELU(),
@@ -64,8 +58,6 @@ class AdaptiveModalityFusion(nn.Module):
         vis_att = self.lang_to_vis_proj(vis_att)
         vis_att = F.interpolate(vis_att, size=lang_att.size(-1), mode='nearest')
         
-        # 计算模态重要性
-        # 提取视觉和语言特征的全局表示
         vis_global = torch.mean(x, dim=1)  # (B, dim)
         lang_global = torch.mean(l * l_mask.permute(0, 2, 1), dim=2)  # (B, l_in_channels)
 
@@ -234,7 +226,6 @@ class SpatialImageLanguageAttention(nn.Module):
         return out
 
 class WindowAttention(nn.Module):
-    """Swin 原生窗口注意力，直接抄自官方"""
     def __init__(self, dim, window_size, num_heads, qkv_bias=True, attn_drop=0., proj_drop=0.):
         super().__init__()
         self.dim = dim
