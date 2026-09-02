@@ -52,7 +52,7 @@ class REFER:
 
         # Set data and image directories based on dataset
         if dataset == 'nwpu':
-            # Dataset-specific layout for REFER-compatible data.
+            # For NWPU-refer dataset, data is in NWPU-refer/nwpu directory
             self.DATA_DIR = data_root
             self.IMAGE_DIR = osp.join(data_root,'images')
         elif dataset in ['refcoco', 'refcoco+', 'refcocog']:

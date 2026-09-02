@@ -4,11 +4,18 @@ Official implementation of **S2CLNet: Structure-Constrained Semantic Contrastive
 
 ![S2CLNet pipeline](pipeline.png)
 
-This repository provides the model, loss functions, data adapters, and training/evaluation entry points. It does not claim ownership of, or introduce, any dataset.
+This repository contains two implementations used in the paper:
+
+```text
+clip/   CLIP visual-language implementation
+swin/   Swin Transformer + BERT implementation
+```
+
+The repository contains model code and dataset adapters only. Dataset files, experiment outputs, and large pretrained weights are excluded from Git.
 
 ## Environment
 
-The code was developed with Python 3.7, PyTorch 1.7.1, and CUDA 10.2. Create an environment and install the listed dependencies:
+The code was developed with Python 3.7, PyTorch 1.7.1, and CUDA 10.2.
 
 ```bash
 conda create -n s2clnet python=3.7
@@ -17,68 +24,38 @@ conda install pytorch=1.7.1 torchvision=0.8.2 torchaudio=0.7.2 cudatoolkit=10.2 
 pip install -r requirements.txt
 ```
 
-The model uses an OpenAI CLIP RN101 checkpoint. Download it separately and place it at `pretrained_weights/RN101.pt`, or pass another location with `--pretrained_clip_weights`. Model checkpoints and datasets are intentionally excluded from Git.
+## Data and Weights
 
-## Model variants
+Place the original datasets in `refer/data/`. Empty directory placeholders for RRSIS-D and RefSegRS are included.
 
-The paper evaluates the proposed method with both CLIP and Swin Transformer visual backbones. The main CLIP training and testing implementation is in the repository root. The Swin backbone definition is available at `lib/backbone_swin.py`; its complete Swin+BERT experiment code is kept separately in the `swin/` implementation directory when needed. The repository includes directory placeholders for `refer/data/`, `pretrained_weights/`, and `swin/pretrained_weights/`, while datasets and large pretrained weight files must be downloaded separately.
+Download the required weights separately:
 
-## Swin Transformer + BERT
-
-The paper also evaluates the model with a Swin Transformer visual backbone and BERT language encoder. The complete implementation is under `swin/`, with BERT source code in `swin/bert/` and tokenizer metadata in `swin/bert-base-uncased/`.
-
-Download these two required pretrained weights separately (large binary files are not stored in Git):
-
-- CLIP RN101: `pretrained_weights/RN101.pt`
+- CLIP RN101: `clip/pretrained_weights/RN101.pt`
 - Swin-B: `swin/pretrained_weights/swin_base_patch4_window12_384_22k.pth`
+- BERT checkpoint: place local files under `swin/bert-base-uncased/`
 
-The dataset directory skeleton is included under `refer/data/`; place the original RRSIS-D or RefSegRS dataset files there.
+The actual datasets and weight files are not proposed or distributed by this work.
 
-To run the Swin version, execute from `swin/` and pass local BERT and Swin weight paths to `train.py` or `test.py`.
-
-## Data
-
-The code includes adapters for `rrsisd` and `refsegrs`. Download these datasets from their original sources and pass the corresponding root with `--refer_data_root`.
-
-For RRSIS-D, the root should contain:
-
-```text
-refer/data/rrsisd/
-├── refs(unc).p
-├── instances.json
-└── images/rrsisd/JPEGImages/
-```
-
-For RefSegRS, the root should contain `images/`, `masks/`, and `output_phrase_train.txt`, `output_phrase_val.txt`, and `output_phrase_test.txt`.
-
-## Training
-
-The supplied entry point runs one CUDA process. Example for RRSIS-D:
+## CLIP Implementation
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python train.py \
-  --dataset rrsisd \
-  --refer_data_root ./refer/data \
-  --pretrained_clip_weights ./pretrained_weights/RN101.pt \
-  --model_id S2CLNet \
-  --epochs 60 \
-  --img_size 480
+cd clip
+python train.py --dataset refsegrs --refer_data_root ../refer/data/RefSegRS --pretrained_clip_weights ./pretrained_weights/RN101.pt
+python test.py --dataset refsegrs --refer_data_root ../refer/data/RefSegRS --pretrained_clip_weights ./pretrained_weights/RN101.pt --resume ./checkpoints/S2CLNet/model_best_S2CLNet.pth
 ```
 
-Checkpoints are written to `--output-dir` and are ignored by Git.
+The CLIP model, tokenizer, data adapters, loss, and training utilities are contained in `clip/`.
 
-## Evaluation
+## Swin-BERT Implementation
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 python test.py \
-  --dataset rrsisd \
-  --refer_data_root ./refer/data \
-  --pretrained_clip_weights ./pretrained_weights/RN101.pt \
-  --resume ./checkpoints/S2CLNet/model_best_S2CLNet.pth \
-  --split val \
-  --img_size 480
+cd swin
+python train.py --dataset refsegrs --refer_data_root ../refer/data/RefSegRS --ck_bert ./bert-base-uncased --bert_tokenizer ./bert-base-uncased --pretrained_swin_weights ./pretrained_weights/swin_base_patch4_window12_384_22k.pth
+python test.py --dataset refsegrs --refer_data_root ../refer/data/RefSegRS --ck_bert ./bert-base-uncased --bert_tokenizer ./bert-base-uncased --pretrained_swin_weights ./pretrained_weights/swin_base_patch4_window12_384_22k.pth --resume ./checkpoints/S2CLNet-SwinBERT/model_best_S2CLNet-SwinBERT.pth
 ```
 
-## Citation and Acknowledgements
+The Swin visual backbone, BERT source implementation, BERT tokenizer metadata, model components, and data adapters are contained in `swin/`.
 
-Please cite the S2CLNet paper when using this code. The implementation builds on the open-source LAVT project and the OpenAI CLIP model.
+## Citation
+
+Please cite the S2CLNet paper when using this code. The implementation builds on the open-source LAVT, Swin Transformer, BERT, and OpenAI CLIP projects.

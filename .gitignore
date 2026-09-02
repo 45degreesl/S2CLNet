@@ -51,3 +51,7 @@ swin/pretrained_weights/*
 # OS files
 Thumbs.db
 .DS_Store
+swintransformer+BERT+MPCL+MFI/
+swin/bert/bert/
+swin/bert-base-uncased/bert-base-uncased/
+swin/bert/__pycache__/

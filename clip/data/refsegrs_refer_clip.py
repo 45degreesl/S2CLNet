@@ -1,35 +1,64 @@
-import os
+
 import torch.utils.data as data
 import torch
 import numpy as np
 from PIL import Image
-import random
-import transformers
-transformers.logging.set_verbosity_error()
 
 from .untils import tokenize
 
-from refer.refer import REFER
-
 from args import get_parser
+import cv2
 
 # Dataset configuration initialization
 parser = get_parser()
 args = parser.parse_args()
 
+data_root = args.refer_data_root
 
-def add_random_boxes(img, min_num=20, max_num=60, size=32):
-    h,w = size, size
-    img = np.asarray(img).copy()
-    img_size = img.shape[1]
-    boxes = []
-    num = random.randint(min_num, max_num)
-    for k in range(num):
-        y, x = random.randint(0, img_size-w), random.randint(0, img_size-h)
-        img[y:y+h, x: x+w] = 0
-        boxes. append((x,y,h,w) )
-    img = Image.fromarray(img.astype('uint8'), 'RGB')
-    return img
+def build_rsris_batches(setname):
+    im_dir1 = f'{data_root}/images/'
+    seg_label_dir = f'{data_root}/masks/'
+    if setname == 'train':
+        setfile = 'output_phrase_train.txt'
+    if setname == 'val':
+        setfile = 'output_phrase_val.txt'
+    if setname == 'test':
+        setfile = 'output_phrase_test.txt'
+
+    n_batch = 0
+    train_ids = []
+    tf = f'{data_root}/'+setfile
+    nn = 0
+    imgnames = set()
+    imname = 'start'
+    all_imgs1 = []
+    all_labels = []
+    all_sentences = []
+
+    test_sentence = []
+
+    with open(tf,'r') as rf:
+        rlines = rf.readlines()
+        for idx,line in enumerate(rlines):
+            lsplit = line.split(' ')
+            if True:
+                im_name1 = im_dir1 + lsplit[0] + '.tif'
+                seg = seg_label_dir + lsplit[0] + '.tif'
+                del(lsplit[0])
+                if False and setname != 'train':
+                    del(lsplit[-1])
+                sentence = ' '.join(lsplit)
+                sent = sentence
+
+                im_1 = im_name1
+                label_mask = seg
+                all_imgs1.append(im_name1)
+                all_labels.append(label_mask)
+                all_sentences.append(sent)
+
+    print("Dataset Loaded.")
+    return all_imgs1, all_labels, all_sentences
+
 
 
 class ReferDataset(data.Dataset):
@@ -45,19 +74,12 @@ class ReferDataset(data.Dataset):
         self.image_transforms = image_transforms
         self.target_transform = target_transforms
         self.split = split
-        self.refer = REFER(args.refer_data_root, args.dataset, args.splitBy)
-
         self.max_tokens = 77
 
-        ref_ids = self.refer.getRefIds(split=self.split)
-        img_ids = self.refer.getImgIds(ref_ids)
-
-        num_images_to_mask = int(len(ref_ids) * 0.2)
-        self.images_to_mask = random.sample(ref_ids, num_images_to_mask)
-
-        all_imgs = self.refer.Imgs
-        self.imgs = list(all_imgs[i] for i in img_ids)
-        self.ref_ids = ref_ids
+        all_imgs1, all_labels, all_sentences = build_rsris_batches(self.split)
+        self.sentences = all_sentences
+        self.imgs1 = all_imgs1
+        self.labels = all_labels
 
         self.input_ids = []
         self.attention_masks = []
@@ -70,21 +92,20 @@ class ReferDataset(data.Dataset):
         self.eval_mode = eval_mode
         # if we are testing on a dataset, test all sentences of an object;
         # o/w, we are validating during training, randomly sample one sentence for efficiency
-        for r in ref_ids:
-            ref = self.refer.Refs[r]
-
+        for r in range(len(self.imgs1)):
+            img_sentences = [self.sentences[r]]
             sentences_for_ref = []
             attentions_for_ref = []
 
-            for i, (el, sent_id) in enumerate(zip(ref['sentences'], ref['sent_ids'])):
-                sentence_raw = el['raw']
+            for i, el in enumerate(img_sentences):
+                sentence_raw = el
                 attention_mask = [0] * self.max_tokens
                 padded_input_ids = [0] * self.max_tokens
 
                 # input_ids = self.tokenizer.encode(text=sentence_raw, add_special_tokens=True)
                 input_ids = self.tokenizer(sentence_raw, self.max_tokens)
 
-                # if len(input_ids) > 20:
+                # if len(input_ids) > 15:
                 #     print(len(input_ids))
 
                 # find non-zero part
@@ -109,21 +130,15 @@ class ReferDataset(data.Dataset):
         return self.classes
 
     def __len__(self):
-        return len(self.ref_ids)
+        return len(self.imgs1)
 
     def __getitem__(self, index):
-        this_ref_id = self.ref_ids[index]
-        this_img_id = self.refer.getImgIds(this_ref_id)
-        this_img = self.refer.Imgs[this_img_id[0]]
+        this_img1 = self.imgs1[index]
 
-        img = Image.open(os.path.join(self.refer.IMAGE_DIR, this_img['file_name']))
-        # todo: image augmentation?
-        # if self.split == 'train' and this_ref_id in self.images_to_mask:
-        #     img = add_random_boxes(img)
+        img1 = Image.open(this_img1).convert("RGB")
+        label_mask = cv2.imread(self.labels[index],2)
 
-        ref = self.refer.loadRefs(this_ref_id)
-
-        ref_mask = np.array(self.refer.getMask(ref[0])['mask'])
+        ref_mask = np.array(label_mask) > 50
         annot = np.zeros(ref_mask.shape)
         annot[ref_mask == 1] = 1
 
@@ -133,7 +148,7 @@ class ReferDataset(data.Dataset):
 
         if self.image_transforms is not None:
             # resize, from PIL to tensor, and mean and std normalization
-            img, target = self.image_transforms(img, annot)
+            img1, target = self.image_transforms(img1, annot)
 
         if self.eval_mode:
             embedding = []
@@ -151,6 +166,4 @@ class ReferDataset(data.Dataset):
             tensor_embeddings = self.input_ids[index][choice_sent]
             attention_mask = self.attention_masks[index][choice_sent]
 
-        #region_mask = torch.from_numpy(ref_mask).float()
-            
-        return img, target, tensor_embeddings, attention_mask, save_prefix
+        return img1, target, tensor_embeddings, attention_mask, save_prefix
