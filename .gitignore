@@ -5,7 +5,11 @@ __pycache__/
 .pytest_cache/
 
 # Datasets, checkpoints, logs, and generated visualizations
-refer/data/
+refer/data/*
+!refer/data/rrsisd/
+!refer/data/rrsisd/.gitkeep
+!refer/data/RefSegRS/
+!refer/data/RefSegRS/.gitkeep
 checkpoints/
 best_iou_files/
 infer_results/
@@ -15,7 +19,8 @@ wandb/
 *.log
 
 # Local pretrained weights
-pretrained_weights/
+pretrained_weights/*
+!pretrained_weights/.gitkeep
 arc/
 bert/
 bert-base-uncased/
@@ -34,6 +39,8 @@ plot_dmbm_figures.py
 vis_dmbm_weights.py
 zhexiantu.py
 lib/mmcv_custom/
+swin/pretrained_weights/*
+!swin/pretrained_weights/.gitkeep
 
 # OS files
 Thumbs.db
