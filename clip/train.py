@@ -148,14 +148,12 @@ def train_one_epoch(model, contrastive_loss, criterion, optimizer, data_loader,
         output, con_vis, con_text = model(image, sentences, attentions) #, sentences_hidden_state)
 
         _, _, H, W = con_vis.shape
-        region_mask = target.unsqueeze(1).float()  # 增加通道维度并转换为 float 类型
+        region_mask = target.unsqueeze(1).float()
         region_mask = torch.nn.functional.interpolate(region_mask, size=(H, W), mode='nearest')
-        region_mask = region_mask.squeeze(1).bool()  # 移除通道维度并转换为 bool 类型
+        region_mask = region_mask.squeeze(1).bool()
 
         text_list = []
         for prefix in save_prefix:
-            # save_prefix 格式: "index_text"
-            # 提取文本部分（去掉开头的数字和下划线）
             text_part = prefix.split('_', 1)[1] if '_' in prefix else prefix
             text_list.append(text_part)
         

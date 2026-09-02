@@ -44,12 +44,12 @@ class _LAVTOneSimpleDecode(nn.Module):
         self.backbone = backbone
         self.classifier = classifier
         self.text_encoder = BertModel.from_pretrained(args.ck_bert)
-        self.text_encoder.pooler = None  # 移除池化层
+        self.text_encoder.pooler = None
 
     def forward(self, x, text, l_mask):
         input_shape = x.shape[-2:]
         l_feats = self.text_encoder(text, attention_mask=l_mask)[0]  # (B, N_l, 768)
-        l_feats = l_feats.permute(0, 2, 1)  # (B, 768, N_l) - 适配视觉特征格式
+        l_feats = l_feats.permute(0, 2, 1)
         l_mask = l_mask.unsqueeze(dim=-1)  # (batch, N_l, 1)
         features = self.backbone(x, l_feats, l_mask)
         x_c1, x_c2, x_c3, x_c4  = features   # e.g. x_c1:[B, 128, 120, 120], x_c2:[B, 256, 60, 60], x_c3:[B, 512, 30, 30], x_c4:[B, 1024, 15, 15]

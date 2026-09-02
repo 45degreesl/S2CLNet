@@ -147,9 +147,9 @@ def train_one_epoch(model, contrastive_loss, criterion, optimizer, data_loader, 
         output, con_vis, con_text = model(image, sentences, attentions) #, sentences_hidden_state)
 
         _, _, H, W = con_vis.shape
-        region_mask = target.unsqueeze(1).float()  # 增加通道维度并转换为 float 类型
+        region_mask = target.unsqueeze(1).float()
         region_mask = torch.nn.functional.interpolate(region_mask, size=(H, W), mode='nearest')
-        region_mask = region_mask.squeeze(1).bool()  # 移除通道维度并转换为 bool 类型
+        region_mask = region_mask.squeeze(1).bool()
         text_list = sentence_raw
         loss_contrast = contrastive_loss(con_vis, con_text, region_mask, text_list)
 
@@ -222,7 +222,7 @@ def main(args):
         {'params': backbone_no_decay, 'weight_decay': 0.0},
         {'params': backbone_decay},
         {"params": [p for p in model.classifier.parameters() if p.requires_grad]},
-        {"params": model.text_encoder.parameters(), 'lr': args.lr * 0.1},  # BERT使用更小的学习率
+        {"params": model.text_encoder.parameters(), 'lr': args.lr * 0.1},
         {"params": contrastive_loss.parameters()},
     ]
 

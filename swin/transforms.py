@@ -123,7 +123,6 @@ class Normalize(object):
         return image, target
 
 
-# 在文件末尾添加
 class RandomScale(object):
     def __init__(self, scale_limit=0.1, p=1.0):
         self.scale_limit = scale_limit

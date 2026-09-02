@@ -71,7 +71,6 @@ class ReferDataset(data.Dataset):
         self.input_ids = []
         self.attention_masks = []
 
-        # 使用BERT Tokenizer
         self.tokenizer = BertTokenizer.from_pretrained(args.bert_tokenizer)
 
         self.sentence_raws = []
@@ -89,13 +88,10 @@ class ReferDataset(data.Dataset):
                 attention_mask = [0] * self.max_tokens
                 padded_input_ids = [0] * self.max_tokens
 
-                # 使用BERT tokenizer的encode方法，与rrsisd保持一致
                 input_ids = self.tokenizer.encode(text=sentence_raw, add_special_tokens=True)
 
-                # 手动截断
                 input_ids = input_ids[:self.max_tokens]
 
-                # 手动填充
                 padded_input_ids[:len(input_ids)] = input_ids
                 attention_mask[:len(input_ids)] = [1] * len(input_ids)
 

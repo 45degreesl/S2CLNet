@@ -59,12 +59,9 @@ class Bottleneck(nn.Module):
 class AdaptiveModalityFusion(nn.Module):
     def __init__(self, dim, v_in_channels, l_in_channels, key_channels, value_channels, num_heads=1, dropout=0.0):
         super(AdaptiveModalityFusion, self).__init__()
-        # 视觉到语言的注意力
         self.image_lang_att = SpatialImageLanguageAttention(v_in_channels, l_in_channels, key_channels, value_channels, num_heads=num_heads)
-        # 语言到视觉的注意力
         self.lang_image_att = SpatialLanguageImageAttention(l_in_channels, v_in_channels, key_channels, value_channels, num_heads=num_heads)
         
-        # 特征投影层
         self.vis_project = nn.Sequential(
             nn.Conv1d(dim, dim, 1, 1),
             nn.GELU(),
@@ -73,15 +70,13 @@ class AdaptiveModalityFusion(nn.Module):
         
         self.lang_to_vis_proj = nn.Conv1d(value_channels, value_channels, 1, 1)
         
-        # 模态重要性评估网络
         self.modality_assessment = nn.Sequential(
-            nn.Linear(dim + 512, 256),  # 视觉特征和语言特征的维度
+            nn.Linear(dim + 512, 256),
             nn.ReLU(),
-            nn.Linear(256, 2),  # 输出两个值，分别表示视觉和语言模态的重要性
-            nn.Softmax(dim=-1)  # 归一化确保两个权重和为1
+            nn.Linear(256, 2),
+            nn.Softmax(dim=-1)
         )
         
-        # 融合层
         self.fusion_layer = nn.Sequential(
             nn.Conv1d(value_channels * 2, value_channels, 1, 1),
             nn.GELU(),
@@ -89,54 +84,43 @@ class AdaptiveModalityFusion(nn.Module):
         )
 
         self.spatial_gate = nn.Sequential(
-            nn.Linear(dim * 2, dim),  # 输入是原始特征和融合特征的拼接
+            nn.Linear(dim * 2, dim),
             nn.ReLU(),
-            nn.Linear(dim, 1),  # 输出每个位置的门控值
+            nn.Linear(dim, 1),
             nn.Sigmoid()
         )
     
     def forward(self, x, l, l_mask):
         B, HW, C = x.shape
         
-        # 视觉特征处理
         vis = self.vis_project(x.permute(0, 2, 1))  # (B, dim, H*W)
         
-        # 视觉到语言的注意力
         lang_att = self.image_lang_att(x, l, l_mask)  # (B, H*W, value_channels)
         lang_att = lang_att.permute(0, 2, 1)  # (B, value_channels, H*W)
         
-        # 语言到视觉的注意力
         lang = l.permute(0, 2, 1)  # (B, N_l, l_in_channels)
         vis_att = self.lang_image_att(lang, x, l_mask)  # (B, N_l, value_channels)
         vis_att = vis_att.permute(0, 2, 1)  # (B, value_channels, N_l)
         vis_att = self.lang_to_vis_proj(vis_att)
         vis_att = F.interpolate(vis_att, size=lang_att.size(-1), mode='nearest')
         
-        # 计算模态重要性
-        # 提取视觉和语言特征的全局表示
         vis_global = torch.mean(x, dim=1)  # (B, dim)
         lang_global = torch.mean(l * l_mask.permute(0, 2, 1), dim=2)  # (B, l_in_channels)
         
-        # 评估哪个模态更重要
         modality_input = torch.cat([vis_global, lang_global], dim=1)  # (B, dim+l_in_channels)
         modality_weights = self.modality_assessment(modality_input)  # (B, 2)
         
-        # 根据重要性权重融合两个方向的注意力
-        # 扩展权重维度以便于乘法操作
-        vis_weight = modality_weights[:, 0].view(B, 1, 1)  # 视觉权重
-        lang_weight = modality_weights[:, 1].view(B, 1, 1)  # 语言权重
+        vis_weight = modality_weights[:, 0].view(B, 1, 1)
+        lang_weight = modality_weights[:, 1].view(B, 1, 1)
         
-        # 加权融合两个方向的注意力
-        weighted_lang_att = lang_att * lang_weight  # 视觉到语言的注意力权重
-        weighted_vis_att = vis_att * vis_weight    # 语言到视觉的注意力权重
+        weighted_lang_att = lang_att * lang_weight
+        weighted_vis_att = vis_att * vis_weight
         
-        # 拼接并融合
         mm = torch.cat([weighted_lang_att, weighted_vis_att], dim=1)
         mm = self.fusion_layer(mm).permute(0, 2, 1)  # (B, H*W, C)
 
         gate_input = torch.cat([x, mm], dim=-1)
         gate = self.spatial_gate(gate_input)  # (B, H*W, 1)
-        # 残差连接
         output = x + gate * mm
 
         return output
@@ -150,19 +134,16 @@ class SpatialLanguageImageAttention(nn.Module):
         self.value_channels = value_channels
         self.num_heads = num_heads
 
-        # 语言特征作为查询
         self.f_query = nn.Sequential(
             nn.Conv1d(l_in_channels, key_channels, kernel_size=1, stride=1),
             nn.InstanceNorm1d(key_channels),
         )
-        # 视觉特征作为键和值
         self.f_key = nn.Sequential(
             nn.Conv1d(v_in_channels, key_channels, kernel_size=1, stride=1),
         )
         self.f_value = nn.Sequential(
             nn.Conv1d(v_in_channels, value_channels, kernel_size=1, stride=1),
         )
-        # 输出投影
         self.W = nn.Sequential(
             nn.Conv1d(value_channels, value_channels, kernel_size=1, stride=1),
             nn.InstanceNorm1d(value_channels),
@@ -175,19 +156,15 @@ class SpatialLanguageImageAttention(nn.Module):
 
         B, N_l = l.size(0), l.size(1)
         B, HW = x.size(0), x.size(1)
-        # 转换维度以适配卷积层
         l = l.permute(0, 2, 1)  # (B, l_in_channels, N_l)
         x = x.permute(0, 2, 1)  # (B, v_in_channels, HW)
 
-        # 处理语言特征作为查询
         query = self.f_query(l)  # (B, key_channels, N_l)
         query = query.permute(0, 2, 1)  # (B, N_l, key_channels)
 
-        # 处理视觉特征作为键和值
         key = self.f_key(x)  # (B, key_channels, HW)
         value = self.f_value(x)  # (B, value_channels, HW)
 
-        # 多头注意力计算
         query = query.reshape(B, N_l, self.num_heads, self.key_channels // self.num_heads).permute(0, 2, 1, 3)
         key = key.reshape(B, self.num_heads, self.key_channels // self.num_heads, HW)
         value = value.reshape(B, self.num_heads, self.value_channels // self.num_heads, HW)
@@ -196,7 +173,7 @@ class SpatialLanguageImageAttention(nn.Module):
 
         sim_map = torch.matmul(query, key)  # (B, num_heads, N_l, HW)
         sim_map = (self.key_channels ** -0.5) * sim_map
-        sim_map = sim_map + (1e4 * l_mask - 1e4)  # 填充位置处理
+        sim_map = sim_map + (1e4 * l_mask - 1e4)
 
         sim_map = F.softmax(sim_map, dim=-1)  # (B, num_heads, N_l, HW)
         out = torch.matmul(sim_map, value.permute(0, 1, 3, 2))  # (B, num_heads, N_l, value_channels//num_heads)
@@ -388,7 +365,6 @@ class MMModifiedResNet(nn.Module):
         x = x.type(self.conv1.weight.dtype)
         x = stem(x)
         x = self.layer1(x)
-        # 第一层融合
         B, D, H, W = x.shape
         x_re = x.view(B, D, H*W).permute(0, 2, 1).contiguous()
         x_out, _ = self.mmfusion1(x_re, l, l_mask)
@@ -396,7 +372,6 @@ class MMModifiedResNet(nn.Module):
         out = x_out.view(-1, H, W, D).permute(0, 3, 1, 2).contiguous()
         outs.append(out)
 
-        # 第二层融合
         x2 = self.layer2(x)
         B, D, H, W = x2.shape
         x_re = x2.view(B, D, H*W).permute(0, 2, 1).contiguous()
@@ -405,7 +380,6 @@ class MMModifiedResNet(nn.Module):
         out = x_out.view(-1, H, W, D).permute(0, 3, 1, 2).contiguous()
         outs.append(out)
 
-        # 第三层融合
         x3 = self.layer3(x2)
         B, D, H, W = x3.shape
         x_re = x3.view(B, D, H*W).permute(0, 2, 1).contiguous()
@@ -414,7 +388,6 @@ class MMModifiedResNet(nn.Module):
         out = x_out.view(-1, H, W, D).permute(0, 3, 1, 2).contiguous()
         outs.append(out)
 
-        # 第四层融合
         x4 = self.layer4(x3)
         B, D, H, W = x4.shape
         x_re = x4.view(B, D, H*W).permute(0, 2, 1).contiguous()
