@@ -1,0 +1,2 @@
+clip/pretrained_weights/RN101.pt filter=lfs diff=lfs merge=lfs -text
+swin/pretrained_weights/swin_base_patch4_window12_384_22k.pth filter=lfs diff=lfs merge=lfs -text
