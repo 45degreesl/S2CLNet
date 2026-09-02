@@ -24,6 +24,12 @@ pretrained_weights/*
 arc/
 bert/
 bert-base-uncased/
+!swin/bert/
+!swin/bert/**
+!swin/bert-base-uncased/
+!swin/bert-base-uncased/config.json
+!swin/bert-base-uncased/tokenizer_config.json
+!swin/bert-base-uncased/vocab.txt
 pipeline.jpg
 
 # Local analysis and ablation scripts not required for reproduction
