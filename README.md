@@ -11,7 +11,7 @@ clip/   CLIP visual-language implementation
 swin/   Swin Transformer + BERT implementation
 ```
 
-The repository contains model code and dataset adapters only. Dataset files, experiment outputs, and large pretrained weights are excluded from Git.
+The repository contains model code and dataset adapters only. Dataset files and large pretrained weights are excluded from Git.
 
 ## Environment
 
