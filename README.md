@@ -24,17 +24,44 @@ conda install pytorch=1.7.1 torchvision=0.8.2 torchaudio=0.7.2 cudatoolkit=10.2 
 pip install -r requirements.txt
 ```
 
-## Data and Weights
+## Downloads
 
-Place the original datasets in `refer/data/`. Empty directory placeholders for RRSIS-D and RefSegRS are included.
+### Datasets
 
-Download the required weights separately:
+S2CLNet is evaluated on three publicly released referring remote sensing image segmentation datasets. Please obtain each dataset from its original project and follow the corresponding license and preparation instructions.
 
-- CLIP RN101: `clip/pretrained_weights/RN101.pt`
-- Swin-B: `swin/pretrained_weights/swin_base_patch4_window12_384_22k.pth`
-- BERT checkpoint: place local files under `swin/bert-base-uncased/`
+| Dataset | Official project |
+| --- | --- |
+| RefSegRS | [AI4EO RRSIS project](https://gitlab.lrz.de/ai4eo/reasoning/rrsis) |
+| RRSIS-D | [RMSIN repository](https://github.com/Lsan2401/RMSIN) |
+| RISBench | [CroBIM repository](https://github.com/HIT-SIRS/CroBIM) |
 
-The actual datasets and weight files are not proposed or distributed by this work.
+Place the downloaded data under the shared dataset directory:
+
+```text
+refer/data/
+├── RefSegRS/
+├── rrsisd/
+└── RISBench/
+```
+
+The datasets were released by their original authors and are not distributed by this repository.
+
+### Pretrained Weights
+
+The CLIP RN101 and Swin-B initialization weights are provided together through Baidu Netdisk:
+
+> [Download pretrained weights](https://pan.baidu.com/s/1j05JQ9_eIWLK3sDkIkuu2A)<br>
+> Extraction code: `scln`
+
+After downloading, place the files in the following locations:
+
+| Architecture | Weight | Destination |
+| --- | --- | --- |
+| CLIP | `RN101.pt` | `clip/pretrained_weights/RN101.pt` |
+| Swin Transformer | `swin_base_patch4_window12_384_22k.pth` | `swin/pretrained_weights/swin_base_patch4_window12_384_22k.pth` |
+
+The Swin implementation also uses BERT-base-uncased. Tokenizer metadata is included in `swin/bert-base-uncased/`; additional BERT checkpoint files can be obtained from the [official Hugging Face model page](https://huggingface.co/bert-base-uncased).
 
 ## CLIP Implementation
 

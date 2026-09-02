@@ -10,6 +10,8 @@ refer/data/*
 !refer/data/rrsisd/.gitkeep
 !refer/data/RefSegRS/
 !refer/data/RefSegRS/.gitkeep
+!refer/data/RISBench/
+!refer/data/RISBench/.gitkeep
 checkpoints/
 best_iou_files/
 infer_results/
