@@ -1,0 +1,40 @@
+# Python and editor files
+__pycache__/
+*.py[cod]
+.idea/
+.pytest_cache/
+
+# Datasets, checkpoints, logs, and generated visualizations
+refer/data/
+checkpoints/
+best_iou_files/
+infer_results/
+Overlay/
+weight_vis_results/
+wandb/
+*.log
+
+# Local pretrained weights
+pretrained_weights/
+arc/
+bert/
+bert-base-uncased/
+pipeline.jpg
+
+# Local analysis and ablation scripts not required for reproduction
+boxxxx.py
+class_iou.py
+gen_overlay_results.py
+get_feature_map_baseline.py
+get_feature_map_mpcl.py
+gt.py
+iou 0.9.py
+iou_compute.py
+plot_dmbm_figures.py
+vis_dmbm_weights.py
+zhexiantu.py
+lib/mmcv_custom/
+
+# OS files
+Thumbs.db
+.DS_Store

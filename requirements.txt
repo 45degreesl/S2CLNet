@@ -1,0 +1,13 @@
+numpy
+Pillow
+matplotlib
+timm
+ftfy
+regex
+scikit-image
+pycocotools==2.0.2
+opencv-python==4.5.3.56
+requests
+filelock
+tqdm
+tokenizers
